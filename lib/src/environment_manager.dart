@@ -1,50 +1,52 @@
 import 'package:flutter/widgets.dart';
 
-typedef EnvironmentBuilder = Widget Function(
+typedef EnvironmentBuilder<T> = Widget Function(
   BuildContext context,
-  String? envId,
+  T? environment,
 );
 
-typedef OnEnvChanged = void Function(BuildContext context, String id);
-
-class EnvironmentManager extends StatefulWidget {
-  final EnvironmentBuilder builder;
-  final ValueChanged<String> onChanged;
-  final String? initialId;
+class EnvironmentManager<T> extends StatefulWidget {
+  final EnvironmentBuilder<T> builder;
+  final ValueChanged<T> onChanged;
+  final T? initialData;
 
   const EnvironmentManager({
     required this.builder,
     required this.onChanged,
-    this.initialId,
+    this.initialData,
     Key? key,
   }) : super(key: key);
 
   @override
-  State<EnvironmentManager> createState() => _EnvironmentManagerState();
+  State<EnvironmentManager<T>> createState() => _EnvironmentManagerState<T>();
 
-  static _EnvironmentManagerState _getState(BuildContext context) {
-    return context.findAncestorStateOfType<_EnvironmentManagerState>()!;
+  static _EnvironmentManagerState<T> _getState<T>(BuildContext context) {
+    return context.findAncestorStateOfType<_EnvironmentManagerState<T>>()!;
   }
 
-  static void change(
+  static void change<T>(
     BuildContext context,
-    String envId, {
+    T env, {
     bool restart = true,
   }) {
-    _getState(context)._change(context: context, id: envId, restart: restart);
+    _getState<T>(context)._change(
+      context: context,
+      env: env,
+      restart: restart,
+    );
   }
 
-  static String? current(BuildContext context) {
-    return _getState(context).env;
+  static T? current<T>(BuildContext context) {
+    return _getState<T>(context)._env;
   }
 }
 
-class _EnvironmentManagerState extends State<EnvironmentManager> {
-  String? env;
+class _EnvironmentManagerState<T> extends State<EnvironmentManager<T>> {
+  T? _env;
 
   void _init() {
     // init env id
-    env = widget.initialId;
+    _env = widget.initialData;
   }
 
   @override
@@ -54,33 +56,30 @@ class _EnvironmentManagerState extends State<EnvironmentManager> {
   }
 
   @override
-  void didUpdateWidget(covariant EnvironmentManager oldWidget) {
+  void didUpdateWidget(covariant EnvironmentManager<T> oldWidget) {
     super.didUpdateWidget(oldWidget);
 
-    if (oldWidget.initialId != widget.initialId) {
+    if (oldWidget.initialData != widget.initialData) {
       _init();
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Builder(builder: (context) {
-      return widget.builder(context, env);
-    });
+    return widget.builder(context, _env);
   }
 
   void _change({
     required BuildContext context,
-    required String id,
+    required T env,
     required bool restart,
   }) {
-    if (id != env) {
-      widget.onChanged(id);
-      setState(() => env = id);
-    }
-
-    if (restart) {
-      Navigator.popUntil(context, (route) => route.isFirst);
-    }
+    setState(() {
+      widget.onChanged(env);
+      _env = env;
+      if (restart) {
+        Navigator.popUntil(context, (route) => route.isFirst);
+      }
+    });
   }
 }
