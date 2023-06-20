@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/widgets.dart';
 
 typedef EnvironmentBuilder<T> = Widget Function(
@@ -5,9 +7,11 @@ typedef EnvironmentBuilder<T> = Widget Function(
   T? environment,
 );
 
+typedef EnvChanged<T> = FutureOr<void> Function(T value);
+
 class EnvironmentManager<T> extends StatefulWidget {
   final EnvironmentBuilder<T> builder;
-  final ValueChanged<T> onChanged;
+  final EnvChanged<T> onChanged;
   final T? initialData;
 
   const EnvironmentManager({
@@ -69,14 +73,15 @@ class _EnvironmentManagerState<T> extends State<EnvironmentManager<T>> {
     return widget.builder(context, _env);
   }
 
-  void _change({
+  Future<void> _change({
     required BuildContext context,
     required T env,
     required bool restart,
-  }) {
+  }) async {
+    _env = env;
+    await widget.onChanged(env);
+
     setState(() {
-      widget.onChanged(env);
-      _env = env;
       if (restart) {
         Navigator.popUntil(context, (route) => route.isFirst);
       }

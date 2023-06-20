@@ -17,7 +17,8 @@ class MyApp extends StatelessWidget {
           home: HomePage(key: ValueKey(env)),
         );
       },
-      onChanged: (val) {
+      onChanged: (val) async {
+        await Future.delayed(const Duration(milliseconds: 500));
         print(val.id);
       },
     );
